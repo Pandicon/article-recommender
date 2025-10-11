@@ -14,6 +14,9 @@ class ArticleMetadata:
         self.title = title
         self.text = text
         self.hostname = hostname if not hostname == None else "unknown"
+    
+    def format_for_llm(self) -> str:
+        return f"Title: {self.title}\nSource: {self.hostname}\nText: {self.text}"
 
 def fetch_article(url: str) -> typing.Optional[str]:
     downloaded_page = trafilatura.fetch_url(url)

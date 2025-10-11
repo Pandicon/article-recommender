@@ -1,3 +1,4 @@
+dotenv
 google-generativeai
 mypy>=1.18.1
 pylint>=3.3.8

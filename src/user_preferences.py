@@ -8,14 +8,30 @@ RawJsonDict: typing.TypeAlias = dict[str, typing.Union["ScoreInformation", dict[
 
 @dataclass
 class UserPreferences:
-    interests: dict[str, dict[str, ScoreInformation]]
+    interests: dict[str, ScoreInformation]
     fluffiness: ScoreInformation
     words_per_ad: ScoreInformation
-    max_clickbait: ScoreInformation
+    minimum_descriptiveness: ScoreInformation
     def __init__(self, json_dict: RawJsonDict):
         default_preferences = UserPreferences.default_raw()
-        for key, default_value in default_preferences.items():
-            setattr(self, key, json_dict[key] if key in json_dict.keys() else default_value)
+        interests = json_dict["interests"] if "interests" in json_dict.keys() else default_preferences["interests"]
+        fluffiness = json_dict["fluffiness"] if "fluffiness" in json_dict.keys() else default_preferences["flufiness"]
+        words_per_ad = json_dict["words_per_ad"] if "words_per_ad" in json_dict.keys() else default_preferences["words_per_ad"]
+        minimum_descriptiveness = json_dict["minimum_descriptiveness"] if "minimum_descriptiveness" in json_dict.keys() else default_preferences["minimum_descriptiveness"]
+        interests = {theme: ScoreInformation(information["score"], information["articles_analysed"]) for theme, information in interests.items()}
+        fluffiness = ScoreInformation(fluffiness["score"], fluffiness["articles_analysed"])
+        words_per_ad = ScoreInformation(words_per_ad["score"], words_per_ad["articles_analysed"])
+        minimum_descriptiveness = ScoreInformation(minimum_descriptiveness["score"], minimum_descriptiveness["articles_analysed"])
+        self.interests = interests
+        self.fluffiness = fluffiness
+        self.words_per_ad = words_per_ad
+        self.minimum_descriptiveness = minimum_descriptiveness
+
+    def format_for_llm(self) -> str:
+        for interest, score_information in self.interests.items():
+            print(interest, type(score_information))
+        res = {interest: score_information.score for interest, score_information in self.interests.items()}
+        return str(res)
 
     @staticmethod
     def default() -> UserPreferences:
@@ -27,7 +43,7 @@ class UserPreferences:
             "interests": {},
             "fluffiness": ScoreInformation(0.0, 0),
             "words_per_ad": ScoreInformation(0.0, 0),
-            "max_clickbait": ScoreInformation(0.0, 0)
+            "minimum_descriptiveness": ScoreInformation(0.0, 0)
         }
 
 @dataclass
