@@ -12,7 +12,7 @@ class UserPreferences:
     fluffiness: ScoreInformation
     words_per_ad: ScoreInformation
     max_clickbait: ScoreInformation
-    def __init__(self, json_dict: RawJsonDict) -> UserPreferences:
+    def __init__(self, json_dict: RawJsonDict):
         default_preferences = UserPreferences.default_raw()
         for key, default_value in default_preferences.items():
             setattr(self, key, json_dict[key] if key in json_dict.keys() else default_value)
@@ -44,10 +44,10 @@ def load(preferences_path: str) -> UserPreferences:
     """
     try:
         with open(preferences_path, 'r') as file:
-            is_empty = len(file.read().strip()) == 0
-            file.seek(0)
+            content = file.read().strip()
+            is_empty = len(content) == 0
             if not is_empty:
-                data = json.loads(file)
+                data = json.loads(content)
                 user_preferences = UserPreferences(data)
                 return user_preferences
             print(f"Warning: '{preferences_path}' is empty. Returning an empty dictionary.")
