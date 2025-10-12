@@ -6,6 +6,8 @@ import logging
 import typing
 
 RawJsonDict: typing.TypeAlias = dict[str, typing.Union["ScoreInformation", dict[str, "ScoreInformation"]]]
+ScoreInformationDict: typing.TypeAlias = dict[str, typing.Union[float, int]]
+PredicatedActualDict: typing.TypeAlias = dict[str, float]
 
 @dataclass
 class UserPreferences:
@@ -27,6 +29,13 @@ class UserPreferences:
     def format_for_llm(self) -> str:
         res = {interest: score_information.score for interest, score_information in self.interests.items()}
         return str(res)
+    
+    def to_dicts(self) -> dict[str, typing.Union[dict[str, ScoreInformationDict], list[PredicatedActualDict]]]:
+        return {
+            "interests": {key: interest.to_dict() for key, interest in self.interests.items()},
+            "fluffiness": [predicted_actual.to_dict() for predicted_actual in self.fluffiness],
+            "title_descriptiveness": [predicted_actual.to_dict() for predicted_actual in self.title_descriptiveness]
+        }
 
     @staticmethod
     def default() -> UserPreferences:
@@ -48,6 +57,12 @@ class ScoreInformation:
         self.score = score
         self.articles_analysed = articles_analysed
 
+    def to_dict(self) -> ScoreInformationDict:
+        return {
+            "score": self.score,
+            "articles_analysed": self.articles_analysed
+        }
+
 @dataclass
 class PredicatedActual:
     machine_rating: float
@@ -55,6 +70,12 @@ class PredicatedActual:
     def __init__(self, machine_rating: float, user_rating: float):
         self.machine_rating = machine_rating
         self.user_rating = user_rating
+
+    def to_dict(self) -> PredicatedActualDict:
+        return {
+            "machine_rating": self.machine_rating,
+            "user_rating": self.user_rating
+        }
 
 def load(preferences_path: str) -> UserPreferences:
     """
@@ -74,5 +95,20 @@ def load(preferences_path: str) -> UserPreferences:
         logging.error(f"Error: The file '{preferences_path}' was not found.")
         return UserPreferences.default()
     except json.JSONDecodeError as e:
-        logging.error(f"Error: Failed to decode JSON from '{preferences_path}'. {e}")
+        logging.error(f"Error: Failed to decode JSON from '{preferences_path}': {e}")
         return UserPreferences.default()
+
+def save(preferences_path: str, preferences: UserPreferences):
+    """
+    Saves the user preferences to a JSON file
+    """
+    try:
+        with open(preferences_path, 'w') as file:
+            logging.debug("Preferences to save:")
+            logging.debug(preferences)
+            preferences_dict = preferences.to_dicts()
+            logging.debug("Preferences as a dictionary:")
+            logging.debug(preferences_dict)
+            json.dump(preferences_dict, file, indent=4)
+    except Exception as e:
+        logging.error(f"Error: Failed to save user preferences to '{preferences_path}': {e}")
