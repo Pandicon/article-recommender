@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-import fetch_article
 import json
 import google.generativeai
 import typing
-import user_preferences
+import user_preferences_handler
 import user_preferences_models
-import main
+import fetch_article
+import constants
 
 @dataclass
 class ArticleAnalysis:
@@ -20,7 +20,7 @@ class ArticleAnalysis:
         self.how_fluffy = analysis.get("how_fluffy")
         self.how_descriptive_title = analysis.get("how_descriptive_title")
 
-        if self.main_themes == None:
+        if self.main_themes is None:
             self.main_themes = []
 
 @dataclass
@@ -35,7 +35,7 @@ class ArticleScores:
         self.title_descriptiveness = title_descriptiveness
         self.overall = overall
 
-def analyse_article(model: google.generativeai.GenerativeModel, url: str, user_preferences: user_preferences.UserPreferences) -> ArticleAnalysis:
+def analyse_article(model: google.generativeai.GenerativeModel, url: str, user_preferences: user_preferences_handler.UserPreferences) -> ArticleAnalysis:
     """
     Uses an LLM to generate raw scores about the article
     """
@@ -45,13 +45,13 @@ def analyse_article(model: google.generativeai.GenerativeModel, url: str, user_p
     response_text = response.text.strip().removeprefix("```json").removeprefix("```").removeprefix("`").removesuffix("```").removesuffix("`").strip()
     return ArticleAnalysis(response_text)
 
-def rate_article(article_analysis: ArticleAnalysis, user_preferences_models: user_preferences_models.UserPreferencesModels) -> ArticleScores:
+def rate_article(article_analysis: ArticleAnalysis, user_preference_models: user_preferences_models.UserPreferencesModels) -> ArticleScores:
     """
     Generates the scores for the article from the raw data from the LLM
     """
     themes_alignment_score = article_analysis.main_themes_alignment
-    fluffiness_alignment_score = None if article_analysis.how_fluffy is None else user_preferences_models.fluffiness_model.predict([[article_analysis.how_fluffy]])[0]
-    title_descriptiveness_score = None if article_analysis.how_descriptive_title is None else user_preferences_models.title_descriptiveness_model.predict([[article_analysis.how_descriptive_title]])[0]
+    fluffiness_alignment_score = None if article_analysis.how_fluffy is None else user_preference_models.fluffiness_model.predict([[article_analysis.how_fluffy]])[0]
+    title_descriptiveness_score = None if article_analysis.how_descriptive_title is None else user_preference_models.title_descriptiveness_model.predict([[article_analysis.how_descriptive_title]])[0]
     combined_score = combine_scores(list(filter(lambda x: x is not None, [themes_alignment_score, fluffiness_alignment_score, title_descriptiveness_score])))
 
     return ArticleScores(themes_alignment_score, fluffiness_alignment_score, title_descriptiveness_score, combined_score)
@@ -62,10 +62,10 @@ def combine_scores(scores: list[float]) -> float:
     """
     S = 0.1
     def transform(x: float) -> float:
-        return x*(main.MAX_SCORE - S)/main.MAX_SCORE + S
-    
+        return x*(constants.MAX_SCORE - S)/constants.MAX_SCORE + S
+
     def inverse_transform(x: float) -> float:
-        return main.MAX_SCORE/(main.MAX_SCORE - S)*(x-S)
+        return constants.MAX_SCORE/(constants.MAX_SCORE - S)*(x-S)
 
     p = 0.25
     return inverse_transform(pow(sum([pow(transform(score), p) for score in scores]) / len(scores), 1/p))

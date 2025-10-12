@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import sklearn.ensemble
 import numpy
 
-import user_preferences
+import user_preferences_handler
 
 # Chat-GPTed, hopefully works 😅
 MODEL_PARAMETRES = {
@@ -30,12 +30,12 @@ RANDOM_STATE = 42
 class UserPreferencesModels:
     fluffiness_model: sklearn.ensemble.RandomForestRegressor
     title_descriptiveness_model: sklearn.ensemble.RandomForestRegressor
-    def __init__(self, user_preferences: user_preferences.UserPreferences):
+    def __init__(self, user_preferences: user_preferences_handler.UserPreferences):
         self.fluffiness_model = UserPreferencesModels.get_model(user_preferences.fluffiness)
         self.title_descriptiveness_model = UserPreferencesModels.get_model(user_preferences.title_descriptiveness)
     
     @staticmethod
-    def get_model(data: list[user_preferences.PredicatedActual]) -> sklearn.ensemble.RandomForestRegressor:
+    def get_model(data: list[user_preferences_handler.PredicatedActual]) -> sklearn.ensemble.RandomForestRegressor:
         x_data = numpy.array([point.machine_rating for point in data]).reshape((-1, 1))
         y_data = numpy.array([point.user_rating for point in data])
         data_size = len(x_data)

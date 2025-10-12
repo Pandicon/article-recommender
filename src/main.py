@@ -1,20 +1,13 @@
-import dotenv
 import google.generativeai
-import user_preferences
-import user_preferences_models
-import article_analysis
 import os
 import sys
 import logging
 import time
-
-PREFERENCES_PATH = ".\\user_preferences.json"
-SYSTEM_INSTRUCTION_OLD = """You are a model for judging certain qualities of articles. You must judge those objectively. You will always receive information about the article which includes the article title and article text.
-Your job is to extract 3-7 main themes of the article (very short and quite general themes, generally 1-2 words, similar to a tag, it MUST be in english (translate if necessary)) and how desriptive the title is (rate it with a float from 0=very much clickbait, the title is very misleading about the article to 10=the article is very much about what the title said).
-You will also judge how "fluffy" the article text is. "Fluffy" means the article contains a lot of filler, vague language, repetitions, or content that adds little to no real information. Rate it on a scale from 0 to 10, where 0 means the article is very raw, dense, factual, and informative—like a scientific paper or a very concise report and 10 means the article is extremely fluffy, filled with fluff or filler content, overly verbose, and the reader gains almost no meaningful information despite the length. Consider fluffiness regardless of article length.
-You will also receive a dictionary of theme-score pairs representing the user's interests, where scores range from 0 (not interested at all) to 10 (main interest). Your task is to read the article and rate how well its main themes align with the user's interests. Important: Your alignment score must reflect the user's interests, not the objective importance or newsworthiness of the article. If the article's themes match topics with low user interest scores, the alignment should be low—even if the article is about controversial or significant topics. Conversely, if the article's themes strongly match the user's top interests, the score should be high. Rate the alignment as a float from 0 (user not likely to find it interesting at all) to 10 (exactly the user's main interests).
-You must respond only with JSON in plain text, without any formatting such as ```json and similar. The JSON format is the following:
-{'main_themes': ['theme1', 'theme2, ...], 'main_themes_alignment': float, 'how_fluffy': float, 'how_descriptive_title': float}"""
+import dotenv
+import user_preferences_models
+import article_analysis
+import user_preferences_handler
+import constants
 
 SYSTEM_INSTRUCTION = """You are a model tasked with analyzing articles and rating certain qualities objectively. You will receive:
 - The article title
@@ -52,9 +45,6 @@ You must respond only with JSON in plain text, without any markdown or formattin
 {"main_themes": ['theme1', 'theme2, ...], "main_themes_alignment": float, "how_fluffy": float, "how_descriptive_title": float}
 """
 
-MIN_SCORE = 0
-MAX_SCORE = 10
-
 logging.Formatter.converter = time.gmtime
 logging.basicConfig(
     format="%(asctime)s.%(msecs)03dZ %(levelname)s [%(name)s] %(message)s",
@@ -66,10 +56,10 @@ logging.basicConfig(
 def main():
     logging.debug(SYSTEM_INSTRUCTION)
     dotenv.load_dotenv()
-    preferences = user_preferences.load(PREFERENCES_PATH)
+    preferences = user_preferences_handler.load(constants.PREFERENCES_PATH)
     preferences_prediction_models = user_preferences_models.UserPreferencesModels(preferences)
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-    if GOOGLE_API_KEY == None:
+    if GOOGLE_API_KEY is None:
         logging.error("The Google API key must be set to the GOOGLE_API_KEY environment variable")
         sys.exit(1)
 
