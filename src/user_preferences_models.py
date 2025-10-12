@@ -38,7 +38,6 @@ class UserPreferencesModels:
     def get_model(data: list[user_preferences.PredicatedActual]) -> sklearn.ensemble.RandomForestRegressor:
         x_data = numpy.array([point.machine_rating for point in data]).reshape((-1, 1))
         y_data = numpy.array([point.user_rating for point in data])
-        print(x_data, y_data)
         data_size = len(x_data)
         lower_limits = list(MODEL_PARAMETRES.keys())
         lower_limits.sort()

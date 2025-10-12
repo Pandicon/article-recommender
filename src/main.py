@@ -5,6 +5,8 @@ import user_preferences_models
 import article_analysis
 import os
 import sys
+import logging
+import time
 
 PREFERENCES_PATH = ".\\user_preferences.json"
 SYSTEM_INSTRUCTION_OLD = """You are a model for judging certain qualities of articles. You must judge those objectively. You will always receive information about the article which includes the article title and article text.
@@ -53,15 +55,22 @@ You must respond only with JSON in plain text, without any markdown or formattin
 MIN_SCORE = 0
 MAX_SCORE = 10
 
+logging.Formatter.converter = time.gmtime
+logging.basicConfig(
+    format="%(asctime)s.%(msecs)03dZ %(levelname)s [%(name)s] %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+    level=logging.INFO
+)
+
 # pylint: disable=missing-function-docstring
 def main():
-    print(SYSTEM_INSTRUCTION)
+    logging.debug(SYSTEM_INSTRUCTION)
     dotenv.load_dotenv()
     preferences = user_preferences.load(PREFERENCES_PATH)
     preferences_prediction_models = user_preferences_models.UserPreferencesModels(preferences)
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     if GOOGLE_API_KEY == None:
-        print("ERROR: The Google API key must be set to the GOOGLE_API_KEY environment variable")
+        logging.error("The Google API key must be set to the GOOGLE_API_KEY environment variable")
         sys.exit(1)
 
     google.generativeai.configure(api_key=GOOGLE_API_KEY)
@@ -75,8 +84,9 @@ def main():
 
     url = input("URL to analyse: ")
     article_analysis_result = article_analysis.analyse_article(model, url, preferences)
-    print(article_analysis_result)
-    article_analysis.rate_article(article_analysis_result, preferences_prediction_models)
+    logging.info(article_analysis_result)
+    article_scores = article_analysis.rate_article(article_analysis_result, preferences_prediction_models)
+    logging.info(article_scores)
 # pylint: enable=missing-function-docstring
 
 if __name__ == "__main__":

@@ -23,6 +23,18 @@ class ArticleAnalysis:
         if self.main_themes == None:
             self.main_themes = []
 
+@dataclass
+class ArticleScores:
+    main_themes_alignment: float
+    fluffiness_alignment: float
+    title_descriptiveness: float
+    overall: float
+    def __init__(self, main_themes_alignment: float, fluffiness_alignment: float, title_descriptiveness: float, overall: float):
+        self.main_themes_alignment = main_themes_alignment
+        self.fluffiness_alignment = fluffiness_alignment
+        self.title_descriptiveness = title_descriptiveness
+        self.overall = overall
+
 def analyse_article(model: google.generativeai.GenerativeModel, url: str, user_preferences: user_preferences.UserPreferences) -> ArticleAnalysis:
     """
     Uses an LLM to generate raw scores about the article
@@ -33,16 +45,16 @@ def analyse_article(model: google.generativeai.GenerativeModel, url: str, user_p
     response_text = response.text.strip().removeprefix("```json").removeprefix("```").removeprefix("`").removesuffix("```").removesuffix("`").strip()
     return ArticleAnalysis(response_text)
 
-def rate_article(article_analysis: ArticleAnalysis, user_preferences_models: user_preferences_models.UserPreferencesModels):
+def rate_article(article_analysis: ArticleAnalysis, user_preferences_models: user_preferences_models.UserPreferencesModels) -> ArticleScores:
     """
     Generates the scores for the article from the raw data from the LLM
     """
     themes_alignment_score = article_analysis.main_themes_alignment
-    fluffiness_alignment_score = None if article_analysis.how_fluffy == None else user_preferences_models.fluffiness_model.predict([[article_analysis.how_fluffy]])[0]
-    title_descriptiveness_score = None if article_analysis.how_descriptive_title == None else user_preferences_models.title_descriptiveness_model.predict([[article_analysis.how_descriptive_title]])[0]
-    combined_score = combine_scores([themes_alignment_score, fluffiness_alignment_score, title_descriptiveness_score])
+    fluffiness_alignment_score = None if article_analysis.how_fluffy is None else user_preferences_models.fluffiness_model.predict([[article_analysis.how_fluffy]])[0]
+    title_descriptiveness_score = None if article_analysis.how_descriptive_title is None else user_preferences_models.title_descriptiveness_model.predict([[article_analysis.how_descriptive_title]])[0]
+    combined_score = combine_scores(list(filter(lambda x: x is not None, [themes_alignment_score, fluffiness_alignment_score, title_descriptiveness_score])))
 
-    print(themes_alignment_score, fluffiness_alignment_score, title_descriptiveness_score, combined_score)
+    return ArticleScores(themes_alignment_score, fluffiness_alignment_score, title_descriptiveness_score, combined_score)
 
 def combine_scores(scores: list[float]) -> float:
     """

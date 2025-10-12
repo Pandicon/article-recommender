@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import logging
 import typing
 
 RawJsonDict: typing.TypeAlias = dict[str, typing.Union["ScoreInformation", dict[str, "ScoreInformation"]]]
@@ -24,8 +25,6 @@ class UserPreferences:
         self.title_descriptiveness = title_descriptiveness
 
     def format_for_llm(self) -> str:
-        for interest, score_information in self.interests.items():
-            print(interest, type(score_information))
         res = {interest: score_information.score for interest, score_information in self.interests.items()}
         return str(res)
 
@@ -69,11 +68,11 @@ def load(preferences_path: str) -> UserPreferences:
                 data = json.loads(content)
                 user_preferences = UserPreferences(data)
                 return user_preferences
-            print(f"Warning: '{preferences_path}' is empty. Returning an empty dictionary.")
+            logging.warning(f"Warning: '{preferences_path}' is empty. Returning an empty dictionary.")
             return UserPreferences.default()
     except FileNotFoundError:
-        print(f"Error: The file '{preferences_path}' was not found.")
+        logging.error(f"Error: The file '{preferences_path}' was not found.")
         return UserPreferences.default()
     except json.JSONDecodeError as e:
-        print(f"Error: Failed to decode JSON from '{preferences_path}'. {e}")
+        logging.error(f"Error: Failed to decode JSON from '{preferences_path}'. {e}")
         return UserPreferences.default()
