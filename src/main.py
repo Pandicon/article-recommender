@@ -1,6 +1,7 @@
 import dotenv
 import google.generativeai
 import user_preferences
+import user_preferences_models
 import article_analysis
 import os
 import sys
@@ -49,12 +50,15 @@ You must respond only with JSON in plain text, without any markdown or formattin
 {"main_themes": ['theme1', 'theme2, ...], "main_themes_alignment": float, "how_fluffy": float, "how_descriptive_title": float}
 """
 
+MIN_SCORE = 0
+MAX_SCORE = 10
+
 # pylint: disable=missing-function-docstring
 def main():
     print(SYSTEM_INSTRUCTION)
     dotenv.load_dotenv()
     preferences = user_preferences.load(PREFERENCES_PATH)
-    print(preferences)
+    preferences_prediction_models = user_preferences_models.UserPreferencesModels(preferences)
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     if GOOGLE_API_KEY == None:
         print("ERROR: The Google API key must be set to the GOOGLE_API_KEY environment variable")
@@ -72,6 +76,7 @@ def main():
     url = input("URL to analyse: ")
     article_analysis_result = article_analysis.analyse_article(model, url, preferences)
     print(article_analysis_result)
+    article_analysis.rate_article(article_analysis_result, preferences_prediction_models)
 # pylint: enable=missing-function-docstring
 
 if __name__ == "__main__":
