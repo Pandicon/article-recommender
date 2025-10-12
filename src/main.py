@@ -1,10 +1,14 @@
-import google.generativeai
+"""
+An application for predicting if an article is worth reading for a user based on their previous ratings.
+Only the interests of the user, their preference for how dry/fluffy the text is, and if they want the title to match the article content are taken into account.
+"""
+
 import os
 import sys
 import logging
 import time
 import dotenv
-import json
+import google.generativeai
 import user_preferences_models
 import article_analysis
 import user_preferences_handler
@@ -87,12 +91,12 @@ def main():
 
     while True:
         action = ""
-        while not action in all_valid_actions:
+        while action not in all_valid_actions:
             action = input(f"Please choose the action you want to take from the following list: {actions_with_aliases_str}\n")
             action = action.strip().lower()
-            if not action in VALID_ACTIONS_FULL:
+            if action not in VALID_ACTIONS_FULL:
                 for a in VALID_ACTIONS_FULL:
-                    if not a in ALIASES.keys():
+                    if a not in ALIASES.keys():
                         continue
                     if action in ALIASES[a]:
                         action = a
@@ -109,12 +113,12 @@ def main():
             article_scores = article_analysis.rate_article(article_analysis_result, preferences_prediction_models)
             print(f"Article title: {article_analysis_result.title}\n" +
                   f"Article source: {article_analysis_result.hostname}\n" +
-                  f"Main themes: {", ".join(article_analysis_result.main_themes)}\n" + 
+                  f"Main themes: {", ".join(article_analysis_result.main_themes)}\n" +
                   f"Main themes alignment: {article_scores.main_themes_alignment:.1f}/10\n" +
                   f"Fluffiness: {article_scores.fluffiness_alignment:.1f}/10 (absolute score: {article_analysis_result.how_fluffy:.1f})\n" +
                   f"Title descriptiveness: {article_scores.title_descriptiveness:.1f}/10 (absolute score: {article_analysis_result.how_descriptive_title:.1f})\n" +
                   f"Overall score: {article_scores.overall:.1f}/10")
-            
+
         if action == "change model":
             model_name = ""
             while not model_name in available_model_names_list:
@@ -147,7 +151,7 @@ def main():
                     except ValueError:
                         print(f"Error: The rating has to be a decimal number between {constants.MIN_SCORE:.1f} and {constants.MAX_SCORE:.1f}")
                 theme_ratings.append({"theme": theme, "rating": rating})
-            
+
             fluffiness = 0.0
             got_fluffiness = False
             while not got_fluffiness:
@@ -160,7 +164,7 @@ def main():
                     got_fluffiness = True
                 except ValueError:
                     print(f"Error: The fluffiness rating has to be a decimal number between {constants.MIN_SCORE:.1f} and {constants.MAX_SCORE:.1f}")
-            
+
             title_descriptiveness = 0.0
             got_title_descriptiveness = False
             while not got_title_descriptiveness:
@@ -173,7 +177,7 @@ def main():
                     got_title_descriptiveness = True
                 except ValueError:
                     print(f"Error: The title descriptiveness rating has to be a decimal number between {constants.MIN_SCORE:.1f} and {constants.MAX_SCORE:.1f}")
-            
+
             VALID_SUBMISSION_ACTIONS_FULL = ["submit", "cancel"]
             SUBMISSION_ALIASES = {"submit": ["s"], "cancel": ["c"]}
             all_valid_submission_actions = VALID_SUBMISSION_ACTIONS_FULL.copy()
@@ -185,18 +189,18 @@ def main():
                 all_valid_submission_actions.extend(SUBMISSION_ALIASES[valid_action])
                 submission_actions_with_aliases.append(f"{valid_action} ({", ".join(SUBMISSION_ALIASES[valid_action])})")
             submission_actions_with_aliases_str = ", ".join(submission_actions_with_aliases)
-            print(f"You provided the following data about the article:\n" +
+            print("You provided the following data about the article:\n" +
                   f"URL: {url}\n" +
                   f"Themes and their ratings: {", ".join(f"{theme_info["theme"]}: {theme_info["rating"]:.1f}" for theme_info in theme_ratings)}\n" +
                   f"Fluffiness: {fluffiness:.1f}\n" +
                   f"Title descriptiveness: {title_descriptiveness:.1f}")
             submission_action = ""
-            while not submission_action in all_valid_submission_actions:
+            while submission_action not in all_valid_submission_actions:
                 submission_action = input(f"Based on the above summary, choose an action from the following list: {submission_actions_with_aliases_str}\n")
                 submission_action = submission_action.strip().lower()
-                if not submission_action in VALID_SUBMISSION_ACTIONS_FULL:
+                if submission_action not in VALID_SUBMISSION_ACTIONS_FULL:
                     for a in VALID_SUBMISSION_ACTIONS_FULL:
-                        if not a in SUBMISSION_ALIASES.keys():
+                        if a not in SUBMISSION_ALIASES.keys():
                             continue
                         if submission_action in SUBMISSION_ALIASES[a]:
                             submission_action = a
@@ -219,7 +223,7 @@ def main():
                 preferences.fluffiness.append(user_preferences_handler.PredicatedActual(article_analysis_result.how_fluffy, fluffiness))
                 preferences.title_descriptiveness.append(user_preferences_handler.PredicatedActual(article_analysis_result.how_descriptive_title, title_descriptiveness))
                 user_preferences_handler.save(constants.PREFERENCES_PATH, preferences)
-                
+
 # pylint: enable=missing-function-docstring
 
 if __name__ == "__main__":

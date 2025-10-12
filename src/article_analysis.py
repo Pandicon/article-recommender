@@ -1,7 +1,11 @@
+"""
+Handling the article analysis
+"""
+
 from dataclasses import dataclass
 import json
-import google.generativeai
 import typing
+import google.generativeai
 import user_preferences_handler
 import user_preferences_models
 import fetch_article
@@ -9,6 +13,9 @@ import constants
 
 @dataclass
 class ArticleAnalysis:
+    """
+    A data structure class for storing the results of the article analysis
+    """
     main_themes: list[str]
     main_themes_alignment: typing.Optional[float]
     how_fluffy: typing.Optional[float]
@@ -30,6 +37,9 @@ class ArticleAnalysis:
 
 @dataclass
 class ArticleScores:
+    """
+    A data structure class for storing the article scores
+    """
     main_themes_alignment: float
     fluffiness_alignment: float
     title_descriptiveness: float

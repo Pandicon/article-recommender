@@ -1,3 +1,7 @@
+"""
+Handling of user preferences
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -11,6 +15,9 @@ PredicatedActualDict: typing.TypeAlias = dict[str, float]
 
 @dataclass
 class UserPreferences:
+    """
+    Stores the user preferences
+    """
     interests: dict[str, ScoreInformation]
     fluffiness: list[PredicatedActual]
     title_descriptiveness: list[PredicatedActual]
@@ -27,10 +34,16 @@ class UserPreferences:
         self.title_descriptiveness = title_descriptiveness
 
     def format_for_llm(self) -> str:
+        """
+        Formats the stored data for use in a LLM prompt
+        """
         res = {interest: score_information.score for interest, score_information in self.interests.items()}
         return str(res)
-    
+
     def to_dicts(self) -> dict[str, typing.Union[dict[str, ScoreInformationDict], list[PredicatedActualDict]]]:
+        """
+        Converts the class to a JSON serializable dictionary
+        """
         return {
             "interests": {key: interest.to_dict() for key, interest in self.interests.items()},
             "fluffiness": [predicted_actual.to_dict() for predicted_actual in self.fluffiness],
@@ -39,10 +52,16 @@ class UserPreferences:
 
     @staticmethod
     def default() -> UserPreferences:
+        """
+        Returns the default value
+        """
         return UserPreferences(UserPreferences.default_raw())
 
     @staticmethod
     def default_raw() -> RawJsonDict:
+        """
+        Returns the default value as a dictionary
+        """
         return {
             "interests": {},
             "fluffiness": [],
@@ -51,6 +70,9 @@ class UserPreferences:
 
 @dataclass
 class ScoreInformation:
+    """
+    A data structure class for storing the average score and number of articles the score is derived from
+    """
     score: float
     articles_analysed: int
     def __init__(self, score: float, articles_analysed: int):
@@ -58,6 +80,9 @@ class ScoreInformation:
         self.articles_analysed = articles_analysed
 
     def to_dict(self) -> ScoreInformationDict:
+        """
+        Converts the class to a JSON serializable dictionary
+        """
         return {
             "score": self.score,
             "articles_analysed": self.articles_analysed
@@ -65,6 +90,9 @@ class ScoreInformation:
 
 @dataclass
 class PredicatedActual:
+    """
+    A data structure class for storing pairs of scores given by the LLM and the user
+    """
     machine_rating: float
     user_rating: float
     def __init__(self, machine_rating: float, user_rating: float):
@@ -72,6 +100,9 @@ class PredicatedActual:
         self.user_rating = user_rating
 
     def to_dict(self) -> PredicatedActualDict:
+        """
+        Converts the class to a JSON serializable dictionary
+        """
         return {
             "machine_rating": self.machine_rating,
             "user_rating": self.user_rating
@@ -82,7 +113,7 @@ def load(preferences_path: str) -> UserPreferences:
     Loads the user preferences JSON file, handling the case of a missing/empty file
     """
     try:
-        with open(preferences_path, 'r') as file:
+        with open(preferences_path, 'r', encoding = "utf-8") as file:
             content = file.read().strip()
             is_empty = len(content) == 0
             if not is_empty:
@@ -103,12 +134,12 @@ def save(preferences_path: str, preferences: UserPreferences):
     Saves the user preferences to a JSON file
     """
     try:
-        with open(preferences_path, 'w') as file:
+        with open(preferences_path, 'w', encoding = "utf-8") as file:
             logging.debug("Preferences to save:")
             logging.debug(preferences)
             preferences_dict = preferences.to_dicts()
             logging.debug("Preferences as a dictionary:")
             logging.debug(preferences_dict)
             json.dump(preferences_dict, file, indent=4)
-    except Exception as e:
+    except Exception as e: # pylint: disable=broad-exception-caught
         logging.error(f"Error: Failed to save user preferences to '{preferences_path}': {e}")

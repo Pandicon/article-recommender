@@ -1,3 +1,7 @@
+"""
+Handling of the models used for predicting the user value from the LLM provided one
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -28,14 +32,20 @@ RANDOM_STATE = 42
 
 @dataclass
 class UserPreferencesModels:
+    """
+    A class for storing models used for predicting the user value from the LLM provided one
+    """
     fluffiness_model: sklearn.ensemble.RandomForestRegressor
     title_descriptiveness_model: sklearn.ensemble.RandomForestRegressor
     def __init__(self, user_preferences: user_preferences_handler.UserPreferences):
         self.fluffiness_model = UserPreferencesModels.get_model(user_preferences.fluffiness)
         self.title_descriptiveness_model = UserPreferencesModels.get_model(user_preferences.title_descriptiveness)
-    
+
     @staticmethod
     def get_model(data: list[user_preferences_handler.PredicatedActual]) -> sklearn.ensemble.RandomForestRegressor:
+        """
+        Trains a model to predict the user value from the LLM provided one
+        """
         x_data = numpy.array([point.machine_rating for point in data]).reshape((-1, 1))
         y_data = numpy.array([point.user_rating for point in data])
         data_size = len(x_data)
